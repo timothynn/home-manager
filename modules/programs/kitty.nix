@@ -24,11 +24,11 @@
 
       # Cursor
       cursor_shape = "beam";
-      cursor_beam_thickness = 1.8;
+      cursor_beam_thickness = 1.5;
 
       # Padding (important for aesthetics)
-      window_padding_width = 8;
-      window_padding_height = 8;
+      window_padding_width = 5;
+      window_padding_height = 5;
 
       # Tab bar
       tab_bar_style = "powerline";

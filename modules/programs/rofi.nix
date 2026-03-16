@@ -73,7 +73,7 @@ in
 {
   programs.rofi = {
     enable = true;
-    package = pkgs.rofi-wayland;
+    package = pkgs.rofi;
     terminal = "kitty";
     font = "JetBrainsMono Nerd Font 12";
     theme = "${rofiTheme}";

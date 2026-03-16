@@ -183,8 +183,8 @@ in
         "$mod, V,      togglefloating"
         "$mod, F,      fullscreen"
         "$mod, P,      pseudo"
-        # layoutmsg is the correct dispatcher for dwindle split toggle in modern Hyprland.
-        "$mod, J,      layoutmsg, togglesplit"
+        # T = Toggle split for dwindle layout (avoids conflict with $mod, j = movefocus, d)
+        "$mod, T,      layoutmsg, togglesplit"
         "$mod SHIFT, F, togglefloating"
 
         # Focus
@@ -288,6 +288,9 @@ in
       # Using `windowrulev2` (hyprland will warn it's deprecated but accepts this syntax)
       # Use windowrulev2 but keep rules simple to avoid parsing issues
       windowrulev2 = [
+        # Suppress unwanted maximize requests from apps
+        "suppressevent maximize, class:.*"
+
         # Float common utility windows
         "float, class:^(pavucontrol)$"
         "float, class:^(blueman-manager)$"

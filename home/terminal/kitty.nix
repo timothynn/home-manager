@@ -12,7 +12,7 @@
 
     font = {
       name = "JetBrainsMono Nerd Font";
-      size = 11.5;
+      size = 11;
     };
 
     settings = {
@@ -34,8 +34,8 @@
       cursor_blink_interval    = "0.5";
 
       # ── Window aesthetics ─────────────────────────────────────────────
-      window_padding_width     = 10;
-      window_padding_height    = 10;
+      window_padding_width     = 5;
+      window_padding_height    = 5;
 
       # ── Tab bar ───────────────────────────────────────────────────────
       tab_bar_style            = "powerline";
