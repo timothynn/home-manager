@@ -117,7 +117,7 @@ in
 
       # ── Input ────────────────────────────────────────────────────────────
       input = {
-        kb_layout = "gb"; # adjust to your locale
+        kb_layout = "us";
         follow_mouse  = 1;
         accel_profile = "flat";
         sensitivity   = 0;
