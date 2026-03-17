@@ -45,9 +45,6 @@ in
     ./modules/desktop/mako.nix
     ./modules/desktop/hyprlock.nix
 
-    # Application launcher
-    ./modules/programs/wofi.nix
-
     # Terminal emulator
     ./home/terminal/kitty.nix
 

@@ -308,6 +308,9 @@ in
         # Workspace pinning
         "workspace 2, class:^(firefox)$"
         "workspace 3, class:^(code|cursor)$"
+
+        # Kitty terminal — slight transparency
+        "opacity 0.95 0.90, class:^(kitty)$"
       ];
     };
   };
