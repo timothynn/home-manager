@@ -79,11 +79,13 @@
   };
 
   nixpkgs.config = {
-      allowUnfree = true;
-    permittedInsecurePackages = [
-      "dotnet-sdk-6.0.428"
-      "dotnet-sdk-7.0.410"
-    ];
+    allowUnfree = true;
+    # .NET is disabled for now. Re-enable these pins if you reinstate
+    # dotnet in home.nix / flake.nix.
+    # permittedInsecurePackages = [
+    #   "dotnet-sdk-6.0.428"
+    #   "dotnet-sdk-7.0.410"
+    # ];
   };
 
   system.stateVersion = "25.05";

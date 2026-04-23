@@ -126,15 +126,21 @@ npm install -g cowsay          # no sudo, no EACCES
 which cowsay                   # /home/tim/.npm-global/bin/cowsay
 ```
 
-### 3. .NET SDKs
+### 3. .NET SDKs (currently disabled)
 
-`home.nix` installs `dotnetCorePackages.combinePackages [sdk_6_0 sdk_8_0 sdk_10_0]` so one `dotnet` binary dispatches across all three. The SDK list is `lib.optional`-guarded so missing versions don't break eval.
+.NET is commented out. To re-enable, uncomment the three blocks marked `.NET is disabled for now` in:
+
+- `home.nix` (let-binding + `home.packages` append)
+- `flake.nix` (`permittedInsecurePackages` + `dotnetSdks` + `dotnet` devShell)
+- `hosts/default/configuration.nix` (`permittedInsecurePackages`)
+
+Once uncommented, `home.nix` installs `dotnetCorePackages.combinePackages [sdk_6_0 sdk_8_0 sdk_10_0]` so one `dotnet` binary dispatches across all three. The SDK list is `lib.optional`-guarded so missing versions don't break eval.
 
 ```bash
 dotnet --list-sdks             # 6.0.x, 8.0.x, 10.0.x (minus anything missing)
 ```
 
-**.NET 6 is EOL.** The flake allows `dotnet-sdk-6.0.428` via `permittedInsecurePackages`. If your nixpkgs channel has a different patch version, eval will fail with an "insecure" error naming the real version — either copy that version string into `flake.nix` and `hosts/default/configuration.nix`, or switch to a predicate:
+**.NET 6 is EOL.** The pinned allowance is `dotnet-sdk-6.0.428`. If your nixpkgs channel has a different patch version, eval will fail with an "insecure" error naming the real version — either copy that version string into `flake.nix` and `hosts/default/configuration.nix`, or switch to a predicate:
 
 ```nix
 nixpkgs.config.allowInsecurePredicate =
@@ -190,7 +196,7 @@ nix-collect-garbage -d             # user profile only
 nix develop /etc/nixos#rust
 nix develop /etc/nixos#python
 nix develop /etc/nixos#node
-nix develop /etc/nixos#dotnet
+# nix develop /etc/nixos#dotnet  # disabled; see § 3
 ```
 
 The `auto-switch` flake app picks `laptop` vs `desktop` by reading `/sys/class/dmi/id/chassis_type`:
@@ -216,7 +222,7 @@ The custom `iwlwifi` options (`11n_disable=8`, `bt_coex_active=0`) are in `modul
 
 **`catppuccin.<program>.enable does not exist`.** You're on a `catppuccin-nix` commit that doesn't expose that program's module yet. Comment the offending `catppuccin.<program>.enable = true;` line out and rebuild — the program still works, it just won't be themed by that module. (PR #3 moved every catppuccin opt from the `programs.<p>.catppuccin.*` form to the correct top-level `catppuccin.<p>.*` form.)
 
-**`package dotnet-sdk-6.X.Y is marked insecure`.** The pinned version in `permittedInsecurePackages` drifted. See the .NET section above.
+**`package dotnet-sdk-6.X.Y is marked insecure`.** You uncommented the .NET blocks and the pinned version in `permittedInsecurePackages` drifted. See the .NET section above.
 
 **Hyprland fails to start after `flake update`.** This used to be the default story when `hyprland` tracked master. The flake now pins `?ref=v0.54.3`; bump the ref in `flake.nix` explicitly, run `nix flake lock --update-input hyprland`, and re-read the Hyprland 0.51/0.53+ breaking changes before jumping more than a minor version.
 
