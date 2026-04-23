@@ -63,6 +63,7 @@
     # Editor
     ./home/editor/neovim.nix
     ./home/editor/helix.nix
+    ./home/editor/vscode.nix
 
     # Developer tools
     ./modules/programs/git.nix
