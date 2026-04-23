@@ -4,9 +4,16 @@
 # Catches the class of errors that bit PR #3 before merge: undefined
 # option paths (e.g. programs.*.catppuccin → catppuccin.*), renamed HM
 # options (git.userName → git.settings.user.name, npm.npmrc → npm.settings),
-# and undefined variables (rfkill). `nix flake check --no-build` evaluates
-# every nixosConfiguration, homeConfiguration, and devShell without building
-# any derivation, so the job completes in ~2 min on a free runner.
+# and undefined variables (rfkill).
+#
+# We intentionally do NOT use `nix flake check`. On Determinate Nixd it
+# evaluates nixosConfigurations.{default,laptop,desktop} in parallel and
+# races against internal GC, producing spurious
+#     error: path '/nix/store/...-source' is not valid
+# on otherwise-valid configs (reproduced on two clean runs of this
+# workflow before this commit). Serialized `nix eval` against each
+# named output does the same work, identifies which specific config
+# broke, and is immune to the parallel-eval race.
 #
 # The lockfile job (DeterminateSystems/flake-checker-action) warns when any
 # input drifts past 30d, but does not fail the workflow — staleness is
@@ -34,7 +41,7 @@ concurrency:
 
 jobs:
   check:
-    name: nix flake check
+    name: nix eval (flake outputs)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,22 +51,35 @@ jobs:
         with:
           # The flake's nix.settings references hyprland.cachix.org /
           # nix-community.cachix.org; `accept-flake-config = true` makes
-          # the installer trust those substituters during `flake check`.
+          # the installer trust those substituters during evaluation.
           extra-conf: |
             accept-flake-config = true
 
-      # NOTE: DeterminateSystems/magic-nix-cache-action is deliberately NOT
-      # used here. It exhibits a race where the cache reports a store path
-      # as present but evicts it before nix reads it, producing spurious
-      # `error: path '/nix/store/...-source' is not valid` failures on
-      # --no-build eval jobs like this one. Plain cache.nixos.org via the
-      # installer is sufficient for evaluation.
+      - name: Eval flake outputs (serialized)
+        # Evaluate each named output to its `.drvPath`. This forces every
+        # module to evaluate and every option path to resolve, but does
+        # not build. Serialized to avoid the parallel-eval GC race
+        # described in the header comment.
+        run: |
+          set -euo pipefail
 
-      - name: nix flake check
-        # --no-build: evaluation only. Free runners can't build Hyprland
-        # from source in a reasonable time, and the flake's binary-cache
-        # trust only takes effect on real nixos-rebuild runs anyway.
-        run: nix flake check --no-build --accept-flake-config --show-trace
+          eval_one() {
+            local attr="$1"
+            echo "::group::eval ${attr}"
+            nix eval --accept-flake-config --show-trace --raw \
+              ".#${attr}" >/dev/null
+            echo "::endgroup::"
+          }
+
+          for host in default laptop desktop; do
+            eval_one "nixosConfigurations.${host}.config.system.build.toplevel.drvPath"
+          done
+
+          eval_one "homeConfigurations.tim.activationPackage.drvPath"
+
+          for shell in node python dotnet rust; do
+            eval_one "devShells.x86_64-linux.${shell}.drvPath"
+          done
 
   lockfile:
     name: flake.lock freshness
