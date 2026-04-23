@@ -100,8 +100,11 @@
     rustup
 
     # DevOps / network
+    # Note: openvpn3 is installed system-wide by
+    # modules/services/seabury-vpn.nix (via `programs.openvpn3.enable`) so
+    # its D-Bus/systemd services are wired up. Classic openvpn (v2) stays
+    # here as a user binary for ad-hoc `.ovpn` profiles.
     openvpn
-    openvpn3
     dbeaver-bin
     github-copilot-cli
     net-tools
