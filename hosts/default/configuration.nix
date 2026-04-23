@@ -103,6 +103,9 @@
       "dotnet-sdk-6.0.428"
       "dotnet-sdk-wrapped-6.0.428"
       "dotnet-runtime-6.0.36"
+      # beekeeper-studio bundles Electron 32 (EOL); keeping the attr
+      # allowed until nixpkgs bumps it. Mirrors flake.nix.
+      "beekeeper-studio-5.5.7"
       "aspnetcore-runtime-6.0.36"
     ];
   };

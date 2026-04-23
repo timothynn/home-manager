@@ -87,36 +87,35 @@ home-manager expire-generations "-30 days"     # prune old generations
 
 ### 1. Seabury VPN (one-time, per machine)
 
-The `seabury-vpn.service` unit is guarded by `ConditionPathExists=/etc/openvpn/client/keys/client.conf` and stays a silent no-op until you drop the file in place. Neither `client.conf` nor the password is committed to this repo — both are sensitive and live outside git.
+Full step-by-step runbook: [`docs/seabury-vpn.md`](docs/seabury-vpn.md).
+Short version — the `programs.openvpn3` module is always enabled but the
+tunnel is inert until you drop `client.conf` in place:
 
 ```bash
-# (a) Grab client.conf from gitlab.seaburymro.com / Seabury IT
-sudo install -m 0600 -o root -g root client.conf \
-  /etc/openvpn/client/keys/client.conf
+# (a) Place the Seabury-supplied profile.
+sudo tar -xzf ~/Downloads/openvpn.tar.gz -C /etc/openvpn/
+sudo chown -R root:root /etc/openvpn
+sudo chmod 0700         /etc/openvpn/client/keys
+sudo chmod 0600         /etc/openvpn/client/keys/client.conf
 
-# (b) Wire in auth-user-pass and Seabury's MTU hint
-sudo tee -a /etc/openvpn/client/keys/client.conf >/dev/null <<'EOF'
-auth-user-pass /etc/openvpn/client/keys/auth.txt
-tun-mtu 1380
-EOF
+# (b) (optional) Pin MTU per Seabury IT.
+echo 'tun-mtu 1380' | sudo tee -a /etc/openvpn/client/keys/client.conf
 
-# (c) Create the credentials file (username on line 1, password on line 2)
-sudo install -m 0600 -o root -g root /dev/null /etc/openvpn/client/keys/auth.txt
-sudoedit /etc/openvpn/client/keys/auth.txt
+# (c) Connect interactively — enter your gitlab.seaburymro.com creds.
+openvpn3 session-start --config /etc/openvpn/client/keys/client.conf
 
-# (d) Enable + start. The unit takes over on every boot from here on.
-sudo systemctl enable --now seabury-vpn.service
-journalctl -u seabury-vpn -f
+# (d) Sanity-check.
+openvpn3 sessions-list
+curl -s https://ifconfig.me          # Seabury egress IP
+
+# (e) Disconnect.
+openvpn3 session-manage \
+  --config /etc/openvpn/client/keys/client.conf --disconnect
 ```
 
-If you'd rather run the tunnel interactively, `openvpn3` is also installed:
-
-```bash
-openvpn3 session-start  --config /etc/openvpn/client/keys/client.conf
-openvpn3 session-manage --config /etc/openvpn/client/keys/client.conf --disconnect
-```
-
-To manage the credential file declaratively instead of by hand, encrypt it with sops (`sops-nix` is already imported) and point `sops.secrets.seabury-auth.path = "/etc/openvpn/client/keys/auth.txt";` at `mode = "0400"; owner = "root";`.
+Shell shortcuts from `home/shell/zsh.nix`: `vpn-up`, `vpn-down`,
+`vpn-status`. Auto-start on boot is intentionally off because interactive
+auth can't run before login — see the doc for the cert-based opt-in.
 
 ### 2. npm globals without sudo
 
