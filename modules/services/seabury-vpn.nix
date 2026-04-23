@@ -1,109 +1,111 @@
 ##############################################################################
 # modules/services/seabury-vpn.nix
 #
-# Seabury OpenVPN client — installs the CLI tooling and auto-starts the
-# VPN on boot, matching the official Seabury gitlab runbook:
+# Seabury VPN client, matching the official Seabury runbook (OpenVPN 3 CLI):
 #
-#   openvpn3 session-start --config /etc/openvpn/client/keys/client.conf
-#   (auth with gitlab.seaburymro.com credentials; set tun-mtu 1380)
+#   openvpn3 session-start  --config /etc/openvpn/client/keys/client.conf
+#   openvpn3 session-manage --config /etc/openvpn/client/keys/client.conf \
+#                           --disconnect
 #
-# NOTE: This module does *not* ship `client.conf` or credentials — both are
-# sensitive and must be placed out-of-band by the admin (see RUNBOOK block
-# at the bottom of this file). The systemd unit is guarded by
-# ConditionPathExists so it silently no-ops until the file is in place.
+# Auth is interactive — when `session-start` prompts, use your
+# https://gitlab.seaburymro.com/ username + password. No credentials are
+# persisted by this module.
+#
+# Wiring notes
+# ------------
+# This module enables the upstream `programs.openvpn3` NixOS module
+# (nixos/modules/programs/openvpn3.nix), which:
+#   - installs `pkgs.openvpn3` system-wide
+#   - starts the OpenVPN 3 D-Bus services:
+#       net.openvpn.v3.configmgr
+#       net.openvpn.v3.sessions
+#       net.openvpn.v3.log
+#       net.openvpn.v3.netcfg
+#   - integrates with systemd-resolved when available
+#
+# No bespoke systemd unit is needed — openvpn3 coordinates via D-Bus, not
+# a long-lived daemon.
+#
+# This module does NOT ship `client.conf`. That file is provided by
+# Seabury IT (gitlab.seaburymro.com → openvpn.tar.gz). See the RUNBOOK
+# at the bottom of this file for the one-time placement steps.
 ##############################################################################
-{ pkgs, ... }:
+{ config, ... }:
 
-let
-  vpnDir    = "/etc/openvpn/client/keys";
-  vpnConf   = "${vpnDir}/client.conf";
-in
 {
-  # CLI tooling. Ship both stacks so the Seabury gitlab runbook commands
-  # (`openvpn3 session-start` / `session-manage`) work verbatim, while the
-  # auto-start unit below uses the classic OpenVPN daemon for a simpler
-  # systemd integration (no user D-Bus dependency on a system service).
-  environment.systemPackages = with pkgs; [
-    openvpn        # classic openvpn2 — daemonises cleanly under systemd
-    openvpn3       # matches Seabury's documented `openvpn3 session-*` CLI
-    openresolv     # applies pushed DNS settings via resolvconf
-  ];
+  # Upstream NixOS module: installs openvpn3 and wires its D-Bus + systemd
+  # integration. Option docs: https://search.nixos.org → programs.openvpn3.
+  programs.openvpn3.enable = true;
 
-  # Ensure the expected directory structure exists with strict permissions
-  # so a hand-placed client.conf / auth.txt are not world-readable.
+  # Use systemd-resolved DNS integration only when resolved is actually
+  # running on this host; otherwise openvpn3 logs resolved errors on every
+  # session-start.
+  programs.openvpn3.netcfg.settings.systemd_resolved =
+    config.services.resolved.enable;
+
+  # Expected directory structure with strict permissions so a hand-placed
+  # client.conf is never world-readable.
   systemd.tmpfiles.rules = [
     "d /etc/openvpn              0755 root root -"
     "d /etc/openvpn/client       0755 root root -"
     "d /etc/openvpn/client/keys  0700 root root -"
   ];
 
-  # Auto-start the Seabury tunnel on boot once client.conf is present.
-  #
-  # - ConditionPathExists: unit is a no-op until the admin drops the file.
-  # - --auth-nocache: never keep credentials in memory (creds come from the
-  #   auth-user-pass file referenced from client.conf).
-  # - `--mssfix 1340` approximates the `tun-mtu 1380` guidance from the
-  #   Seabury runbook without needing a post-up ip-link hack; Seabury's own
-  #   MTU override can still be added to client.conf if needed.
-  systemd.services.seabury-vpn = {
-    description = "Seabury OpenVPN (auto-start)";
-    after       = [ "network-online.target" ];
-    wants       = [ "network-online.target" ];
-    wantedBy    = [ "multi-user.target" ];
-
-    unitConfig.ConditionPathExists = vpnConf;
-
-    serviceConfig = {
-      Type       = "notify";
-      ExecStart  = "${pkgs.openvpn}/bin/openvpn --suppress-timestamps --nobind --auth-nocache --mssfix 1340 --config ${vpnConf}";
-      Restart    = "on-failure";
-      RestartSec = "10s";
-      # Allow openvpn to create the tun device and modify routes.
-      CapabilityBoundingSet = "CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_SETUID CAP_SETGID";
-      AmbientCapabilities   = "CAP_NET_ADMIN CAP_NET_RAW CAP_SETUID CAP_SETGID";
-      ProtectHome           = true;
-      ProtectSystem         = "strict";
-      ReadWritePaths        = [ "/etc/resolv.conf" "/run" ];
-    };
-  };
-
   ##############################################################################
   # RUNBOOK (one-time, per machine — intentionally out-of-band because
-  # client.conf and the password are both sensitive):
+  # client.conf is sensitive and provided by Seabury IT):
   #
-  # 1. Get `client.conf` from Seabury IT (or gitlab.seaburymro.com) and
-  #    place it at the canonical path:
+  # 1. Obtain `openvpn.tar.gz` from Seabury IT (or gitlab.seaburymro.com
+  #    per the installation docs) onto your machine, e.g. ~/Downloads/.
   #
-  #       sudo install -m 0600 -o root -g root client.conf \
-  #         /etc/openvpn/client/keys/client.conf
+  # 2. Extract its contents into /etc/openvpn/ — the tarball already
+  #    contains the `client/keys/client.conf` layout the runbook uses:
   #
-  # 2. Append an auth-user-pass line to client.conf so OpenVPN never
-  #    prompts interactively (required for unattended auto-start):
+  #        sudo tar -xzf ~/Downloads/openvpn.tar.gz -C /etc/openvpn/
+  #        sudo chown -R root:root /etc/openvpn
+  #        sudo chmod 0700 /etc/openvpn/client/keys
+  #        sudo chmod 0600 /etc/openvpn/client/keys/client.conf
   #
-  #       echo 'auth-user-pass /etc/openvpn/client/keys/auth.txt' \
-  #         | sudo tee -a /etc/openvpn/client/keys/client.conf
+  # 3. (Optional) Pin MTU to 1380 per Seabury IT — saves running
+  #    `sudo ifconfig tun0 mtu 1380 up` after every session-start:
   #
-  # 3. Create the credential file (username on line 1, password on line 2).
-  #    The file must be mode 0600 and owned by root:
+  #        echo 'tun-mtu 1380' | sudo tee -a \
+  #            /etc/openvpn/client/keys/client.conf
   #
-  #       sudo install -m 0600 -o root -g root /dev/null \
-  #         /etc/openvpn/client/keys/auth.txt
-  #       sudoedit /etc/openvpn/client/keys/auth.txt
-  #       # <gitlab.seaburymro.com username>
-  #       # <password>
+  # 4. Connect (auth interactively with gitlab.seaburymro.com creds):
   #
-  # 4. Enable and start the unit:
+  #        openvpn3 session-start \
+  #            --config /etc/openvpn/client/keys/client.conf
+  #        # Auth User name: <gitlab username>
+  #        # Auth Password:  <gitlab password>
   #
-  #       sudo systemctl enable --now seabury-vpn.service
-  #       journalctl -u seabury-vpn -f
+  #    Sanity checks:
   #
-  # Optional — use openvpn3 interactively instead of the auto-start unit:
+  #        openvpn3 sessions-list
+  #        ip -o addr show tun0
+  #        curl -s https://ifconfig.me    # should be a Seabury egress IP
   #
-  #       openvpn3 session-start  --config /etc/openvpn/client/keys/client.conf
-  #       openvpn3 session-manage --config /etc/openvpn/client/keys/client.conf --disconnect
+  # 5. Disconnect:
   #
-  # If you want the credentials managed declaratively, encrypt auth.txt with
-  # sops (this repo already imports sops-nix) and point sops.secrets.* at
-  # /etc/openvpn/client/keys/auth.txt with mode 0400 / owner root.
+  #        openvpn3 session-manage \
+  #            --config /etc/openvpn/client/keys/client.conf \
+  #            --disconnect
+  #
+  # 6. Shell shortcuts: `vpn-up`, `vpn-down`, `vpn-status` are defined in
+  #    home/shell/zsh.nix.
+  #
+  # Auto-start on boot (intentionally NOT enabled here)
+  # ---------------------------------------------------
+  # openvpn3 has a native autoload mechanism (openvpn3-autoload). Because
+  # Seabury's client.conf requires interactive credentials, enabling
+  # autoload today would cause session-start to block at boot on an auth
+  # prompt that never comes. If you later switch to a cert-based profile,
+  # you can opt in manually with:
+  #
+  #        sudo openvpn3 config-import \
+  #            --config /etc/openvpn/client/keys/client.conf \
+  #            --persistent
+  #        sudo openvpn3 config-manage --config client \
+  #            --prop autoload=true
   ##############################################################################
 }

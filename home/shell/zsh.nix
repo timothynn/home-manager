@@ -74,6 +74,13 @@
       nfu  = "nix flake update";
       nco  = "nix-collect-garbage -d";
 
+      # Seabury VPN (OpenVPN 3). See modules/services/seabury-vpn.nix for
+      # the one-time runbook. `vpn-up` prompts interactively for the
+      # gitlab.seaburymro.com username + password.
+      vpn-up     = "openvpn3 session-start --config /etc/openvpn/client/keys/client.conf";
+      vpn-down   = "openvpn3 session-manage --config /etc/openvpn/client/keys/client.conf --disconnect";
+      vpn-status = "openvpn3 sessions-list";
+
       # Misc
       cls  = "clear";
       q    = "exit";
