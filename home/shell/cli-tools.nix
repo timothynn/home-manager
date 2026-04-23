@@ -38,10 +38,11 @@
   ];
 
   # ── bat — cat with syntax highlighting ─────────────────────────────────────
+  # Catppuccin Mocha theme supplied by catppuccin-nix (flavor set globally).
   programs.bat = {
     enable            = true;
+    catppuccin.enable = true;
     config = {
-      theme       = "Catppuccin Mocha";
       style       = "numbers,changes,header";
       pager       = "less -FR";
     };
@@ -51,6 +52,7 @@
   programs.fzf = {
     enable                = true;
     enableZshIntegration  = true;
+    catppuccin.enable     = true;
     defaultOptions = [
       "--height=40%"
       "--layout=reverse"
@@ -72,6 +74,7 @@
   programs.atuin = {
     enable               = true;
     enableZshIntegration = true;
+    catppuccin.enable    = true;
     settings = {
       auto_sync         = true;
       update_check      = false;
@@ -96,6 +99,7 @@
   programs.yazi = {
     enable               = true;
     enableZshIntegration = true;
+    catppuccin.enable    = true;
     settings = {
       manager = {
         ratio         = [ 1 4 3 ];
@@ -111,6 +115,7 @@
   # ── zellij — terminal multiplexer ──────────────────────────────────────────
   programs.zellij = {
     enable               = true;
+    catppuccin.enable    = true;
   };
 
   # ── fastfetch — system info fetcher ────────────────────────────────────────
@@ -131,7 +136,11 @@
   };
 
   # ── lazygit ─────────────────────────────────────────────────────────────────
-  programs.lazygit.enable = true;
+  # Extra lazygit settings (theme tweaks) are defined in modules/programs/git.nix.
+  programs.lazygit = {
+    enable            = true;
+    catppuccin.enable = true;
+  };
 
   # ── skim — alternative fzf ──────────────────────────────────────────────────
   programs.skim.enable = true;

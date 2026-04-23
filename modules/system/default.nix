@@ -49,9 +49,13 @@
   hardware.enableRedistributableFirmware = true;
   hardware.firmware = [ pkgs.linux-firmware ];
 
-  # Intel iwlwifi reliability tuning for older AC adapters (e.g. 3160).
+  # Intel iwlwifi reliability tuning for older AC adapters (3160 in particular).
+  # 11n_disable=8 disables MIMO power-save which is the most reliable fix for
+  # the 3160's "unavailable" / constant-disconnect states; power_save=0 keeps
+  # the radio from parking; bt_coex_active=0 avoids BT-WiFi coex bugs on this
+  # chipset.
   boot.extraModprobeConfig = ''
-    options iwlwifi power_save=0
+    options iwlwifi power_save=0 11n_disable=8 bt_coex_active=0
     options iwlmvm power_scheme=1
   '';
 
@@ -86,6 +90,25 @@
   programs.zsh.enable = true;
 
   # ---------------------------------------------------------------------------
+  # Containers — rootless Podman with Docker CLI compatibility
+  # ---------------------------------------------------------------------------
+  virtualisation = {
+    containers.enable = true;
+    podman = {
+      enable = true;
+      # Alias `docker` -> `podman` and expose the Docker socket so tools that
+      # expect Docker (docker-compose, testcontainers, IDE integrations) work.
+      dockerCompat = true;
+      dockerSocket.enable = true;
+      defaultNetwork.settings.dns_enabled = true;
+      autoPrune = {
+        enable = true;
+        dates  = "weekly";
+      };
+    };
+  };
+
+  # ---------------------------------------------------------------------------
   # System packages (minimal — user packages go in Home Manager)
   # ---------------------------------------------------------------------------
   environment.systemPackages = with pkgs; [
@@ -105,8 +128,11 @@
     bluez bluez-tools
 
     # External drives / Windows NTFS support
-    ntfs-3g
+    ntfs3g
     exfatprogs
+
+    # Wi-Fi diagnostics (Intel AC 3160 troubleshooting)
+    rfkill iw wirelesstools
   ];
 
   # ---------------------------------------------------------------------------

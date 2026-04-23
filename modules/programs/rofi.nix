@@ -86,9 +86,15 @@ in
       "display-run" = "Run";
       "display-window" = "Windows";
       "display-filebrowser" = "Files";
-      "kb-row-select" = "Tab";
-      "kb-row-tab" = "Control+i";
-      "kb-mode-next" = "Control+space";
+
+      # Tab selects the current row; kb-row-tab is cleared because in terminals
+      # and Wayland input Control+I is byte-identical to Tab (ASCII 0x09) — the
+      # previous mapping `kb-row-tab = "Control+i"` silently collided with
+      # `kb-row-select = "Tab"` and rofi refused the keymap.
+      "kb-row-select"    = "Tab";
+      "kb-row-tab"       = "";
+      "kb-mode-next"     = "Control+space";
+      "kb-mode-previous" = "Control+Shift+space";
     };
   };
 }
