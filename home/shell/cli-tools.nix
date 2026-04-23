@@ -38,13 +38,14 @@
   ];
 
   # ── bat — cat with syntax highlighting ─────────────────────────────────────
-  # Catppuccin Mocha theme supplied by catppuccin-nix (flavor set globally).
+  # Catppuccin Mocha theme supplied by catppuccin-nix; enablement is the
+  # top-level `catppuccin.bat.enable` below (catppuccin-nix owns its own
+  # option namespace).
   programs.bat = {
-    enable            = true;
-    catppuccin.enable = true;
+    enable = true;
     config = {
-      style       = "numbers,changes,header";
-      pager       = "less -FR";
+      style = "numbers,changes,header";
+      pager = "less -FR";
     };
   };
 
@@ -52,7 +53,6 @@
   programs.fzf = {
     enable                = true;
     enableZshIntegration  = true;
-    catppuccin.enable     = true;
     defaultOptions = [
       "--height=40%"
       "--layout=reverse"
@@ -74,7 +74,6 @@
   programs.atuin = {
     enable               = true;
     enableZshIntegration = true;
-    catppuccin.enable    = true;
     settings = {
       auto_sync         = true;
       update_check      = false;
@@ -99,7 +98,6 @@
   programs.yazi = {
     enable               = true;
     enableZshIntegration = true;
-    catppuccin.enable    = true;
     settings = {
       manager = {
         ratio         = [ 1 4 3 ];
@@ -114,8 +112,7 @@
 
   # ── zellij — terminal multiplexer ──────────────────────────────────────────
   programs.zellij = {
-    enable               = true;
-    catppuccin.enable    = true;
+    enable = true;
   };
 
   # ── fastfetch — system info fetcher ────────────────────────────────────────
@@ -137,9 +134,21 @@
 
   # ── lazygit ─────────────────────────────────────────────────────────────────
   # Extra lazygit settings (theme tweaks) are defined in modules/programs/git.nix.
-  programs.lazygit = {
-    enable            = true;
-    catppuccin.enable = true;
+  programs.lazygit.enable = true;
+
+  # ── Catppuccin integrations ────────────────────────────────────────────────
+  # catppuccin-nix exposes `catppuccin.<program>.enable` at the top level,
+  # *not* nested under `programs.<program>`. Each line below is guarded by
+  # the matching `programs.<program>.enable` check in the catppuccin module
+  # itself, so flipping these on without the corresponding program is a
+  # silent no-op rather than an error.
+  catppuccin = {
+    bat.enable                     = true;
+    fzf.enable                     = true;
+    atuin.enable                   = true;
+    yazi.enable                    = true;
+    zellij.enable                  = true;
+    lazygit.enable                 = true;
   };
 
   # ── skim — alternative fzf ──────────────────────────────────────────────────

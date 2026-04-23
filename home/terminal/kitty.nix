@@ -7,11 +7,12 @@
 { pkgs, ... }:
 
 {
+  # catppuccin-nix owns its own option namespace — enable kitty theming at
+  # the top level rather than nested under `programs.kitty`.
+  catppuccin.kitty.enable = true;
+
   programs.kitty = {
     enable = true;
-
-    # Catppuccin Mocha theme supplied by catppuccin-nix.
-    catppuccin.enable = true;
 
     font = {
       name = "JetBrainsMono Nerd Font";
