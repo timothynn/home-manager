@@ -59,12 +59,60 @@
     options iwlmvm power_scheme=1
   '';
 
+  # Run a recent kernel — every LTS bump carries iwlwifi / iwlmvm fixes that
+  # materially help the AC 3160. Swap to linuxPackages_lts if you ever hit a
+  # regression, but the default should be "latest".
+  boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  # Intel CPU microcode updates (security + silicon errata).
+  hardware.cpu.intel.updateMicrocode = true;
+
+  # ---------------------------------------------------------------------------
+  # Firmware updates (BIOS, dock, Thunderbolt, WiFi/BT module) via fwupd.
+  # Manual refresh: `fwupdmgr refresh && fwupdmgr update`.
+  # ---------------------------------------------------------------------------
+  services.fwupd.enable = true;
+
+  # ---------------------------------------------------------------------------
+  # SSD TRIM (weekly timer; safe on every modern SSD / NVMe).
+  # ---------------------------------------------------------------------------
+  services.fstrim.enable = true;
+
+  # ---------------------------------------------------------------------------
+  # zram compressed swap — effectively doubles usable RAM on laptops with
+  # 8-16 GB without touching disk. Uses zstd at 50% of physical memory.
+  # ---------------------------------------------------------------------------
+  zramSwap = {
+    enable        = true;
+    algorithm     = "zstd";
+    memoryPercent = 50;
+  };
+
+  # ---------------------------------------------------------------------------
+  # earlyoom — prevents hard lockups when memory pressure spikes. Fires
+  # before the kernel OOM killer can stall the whole system under swap thrash.
+  # ---------------------------------------------------------------------------
+  services.earlyoom = {
+    enable            = true;
+    freeMemThreshold  = 5;   # kill when < 5% RAM free
+    freeSwapThreshold = 10;  # and < 10% swap free
+  };
+
   # ---------------------------------------------------------------------------
   # Security / Seat management
   # ---------------------------------------------------------------------------
   security.polkit.enable = true;
 
+  # Hyprlock has no PAM entry on NixOS by default — without this, hyprlock
+  # cannot consult PAM and every unlock attempt fails silently. The empty
+  # attr-set accepts the defaults (pam_unix + optional gnome_keyring on
+  # success), which is what we want for a lock screen.
+  security.pam.services.hyprlock = {};
+
   services.gnome.gnome-keyring.enable = true;
+  # Unlock gnome-keyring automatically at graphical login via SDDM/PAM.
+  security.pam.services.login.enableGnomeKeyring = true;
+  security.pam.services.sddm.enableGnomeKeyring  = true;
 
   # ---------------------------------------------------------------------------
   # XDG portals — required by Hyprland, Flatpak, etc.
@@ -148,7 +196,9 @@
     QT_WAYLAND_DISABLE_WINDOWDECORATION = "1";
     SDL_VIDEODRIVER             = "wayland";
     CLUTTER_BACKEND             = "wayland";
-    WLR_NO_HARDWARE_CURSORS     = "1";
+    # WLR_NO_HARDWARE_CURSORS is an NVIDIA-only workaround; on Intel graphics
+    # it forces software cursors which causes flicker and extra latency. Do
+    # not re-add unless `hardware.nvidia` is enabled.
     XCURSOR_THEME               = "catppuccin-mocha-dark-cursors";
     XCURSOR_SIZE                = "24";
   };

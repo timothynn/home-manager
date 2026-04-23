@@ -48,11 +48,30 @@
       experimental-features = [ "nix-command" "flakes" ];
       auto-optimise-store   = true;
       trusted-users         = [ "root" "@wheel" ];
+
+      # Binary caches: upstream Nix + Hyprland's own Cachix so we don't
+      # rebuild Hyprland from source on every flake input bump.
+      substituters = [
+        "https://cache.nixos.org"
+        "https://hyprland.cachix.org"
+        "https://nix-community.cachix.org"
+      ];
+      trusted-public-keys = [
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+        "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      ];
     };
     gc = {
       automatic = true;
       dates     = "weekly";
       options   = "--delete-older-than 7d";
+    };
+    # Dedup store paths on a weekly schedule (independent of
+    # `auto-optimise-store`, which only runs at build time).
+    optimise = {
+      automatic = true;
+      dates     = [ "weekly" ];
     };
   };
 

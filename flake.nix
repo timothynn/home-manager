@@ -9,9 +9,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Bleeding-edge Hyprland from its own flake
+    # Hyprland from its own flake, pinned to a tagged release so that
+    # `nix flake update` doesn't silently drag in breaking syntax changes
+    # (this was #1's whole story). Bump the ref when you deliberately want
+    # a newer version; otherwise leave it here.
     hyprland = {
-      url = "github:hyprwm/Hyprland";
+      url = "github:hyprwm/Hyprland?ref=v0.54.3";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
