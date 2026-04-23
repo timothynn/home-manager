@@ -7,26 +7,24 @@
 ##############################################################################
 { config, pkgs, lib, inputs ? {}, username ? "tim", ... }:
 
-# NOTE: .NET is disabled. Uncomment the let-binding below and the
-# `++ (lib.optional …)` on home.packages to re-enable SDKs 6/8/10.
-# See also flake.nix (permittedInsecurePackages + dotnet devShell) and
-# hosts/default/configuration.nix (permittedInsecurePackages).
+# .NET 6 only for now. SDKs 8 and 10 are left commented for later — see
+# the commented entries below and the matching ones in flake.nix and
+# hosts/default/configuration.nix.
 #
-# let
-#   # Multi-SDK .NET via the nixpkgs-blessed combinator: 6, 8, 10 side-by-side
-#   # on the same `dotnet` binary so `global.json` / `TargetFramework` routing
-#   # works without a devShell. Each SDK is lib.optional-guarded so eval does
-#   # not fail on channels that have not yet packaged one of them (.NET 10
-#   # especially is recent on nixos-unstable).
-#   dotnetCorePackages = pkgs.dotnetCorePackages;
-#   dotnetSdkList =
-#        (lib.optional (dotnetCorePackages ? sdk_6_0)  dotnetCorePackages.sdk_6_0)
-#     ++ (lib.optional (dotnetCorePackages ? sdk_8_0)  dotnetCorePackages.sdk_8_0)
-#     ++ (lib.optional (dotnetCorePackages ? sdk_10_0) dotnetCorePackages.sdk_10_0);
-#   dotnetCombined =
-#     if dotnetSdkList == [] then null
-#     else dotnetCorePackages.combinePackages dotnetSdkList;
-# in
+# Current nixpkgs no longer exposes the top-level `sdk_6_0` alias; the
+# latest 6.0 LTS patch band is `sdk_6_0_4xx` (v6.0.428). The lib.optional
+# guard still keeps eval safe if a future channel rename drops the attr.
+let
+  dotnetCorePackages = pkgs.dotnetCorePackages;
+  dotnetSdkList =
+       (lib.optional (dotnetCorePackages ? sdk_6_0_4xx) dotnetCorePackages.sdk_6_0_4xx)
+    # ++ (lib.optional (dotnetCorePackages ? sdk_8_0)     dotnetCorePackages.sdk_8_0)
+    # ++ (lib.optional (dotnetCorePackages ? sdk_10_0)    dotnetCorePackages.sdk_10_0)
+  ;
+  dotnetCombined =
+    if dotnetSdkList == [] then null
+    else dotnetCorePackages.combinePackages dotnetSdkList;
+in
 
 {
   # ── Identity ───────────────────────────────────────────────────────────────
@@ -134,8 +132,7 @@
     cowsay
     hello
     wl-clipboard
-  ]);
-  # ]) ++ (lib.optional (dotnetCombined != null) dotnetCombined);   # re-enable with the let-binding above
+  ]) ++ (lib.optional (dotnetCombined != null) dotnetCombined);
 
   # ── Session variables ───────────────────────────────────────────────────────
   home.sessionVariables = {
