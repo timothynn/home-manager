@@ -282,34 +282,38 @@ in
       ];
 
       # ── Window rules ─────────────────────────────────────────────────────
-      # Hyprland 0.53+ `windowrule` grammar: RULE first, match conditions
-      # after as `key:value` pairs. Booleans (`float`, `pin`) are rules
-      # on their own — no trailing `on`. `suppressevent` is one word.
-      # See https://wiki.hypr.land/Configuring/Window-Rules/
+      # Hyprland 0.53+ grammar, verified against the upstream wiki and a
+      # known-working HyDE config:
+      #   windowrule = <effect> [value], match:<prop> <value> [, match:…]
+      # Props MUST carry a `match:` prefix (`match:class`, `match:title`).
+      # Boolean effects take `true` / `false` (`float true`, `pin true`).
+      # `suppress_event` is underscored (the rule the 0.54 parser rejects
+      # as `invalid field type suppressevent` otherwise).
+      # https://wiki.hypr.land/Configuring/Window-Rules/
       windowrule = [
         # Suppress unwanted maximize requests from apps
-        "suppressevent maximize, class:.*"
+        "suppress_event maximize, match:class .*"
 
         # Float common utility windows
-        "float, class:^(pavucontrol)$"
-        "float, class:^(blueman-manager)$"
-        "float, class:^(nm-connection-editor)$"
-        "float, title:^(Picture-in-Picture)$"
-        "float, class:^(xdg-desktop-portal)$"
-        "float, class:^(dropdown-term)$"
+        "float true, match:class ^(pavucontrol)$"
+        "float true, match:class ^(blueman-manager)$"
+        "float true, match:class ^(nm-connection-editor)$"
+        "float true, match:title ^(Picture-in-Picture)$"
+        "float true, match:class ^(xdg-desktop-portal)$"
+        "float true, match:class ^(dropdown-term)$"
 
         # Pin and place the dropdown terminal
-        "pin, class:^(dropdown-term)$"
-        "workspace special:dropdown, class:^(dropdown-term)$"
-        "size 100% 40%, class:^(dropdown-term)$"
-        "move 0 0, class:^(dropdown-term)$"
+        "pin true, match:class ^(dropdown-term)$"
+        "workspace special:dropdown, match:class ^(dropdown-term)$"
+        "size 100% 40%, match:class ^(dropdown-term)$"
+        "move 0 0, match:class ^(dropdown-term)$"
 
         # Workspace pinning
-        "workspace 2, class:^(firefox)$"
-        "workspace 3, class:^(code|cursor)$"
+        "workspace 2, match:class ^(firefox)$"
+        "workspace 3, match:class ^(code|cursor)$"
 
-        # Kitty terminal — slight transparency
-        "opacity 0.95 0.90, class:^(kitty)$"
+        # Kitty terminal — slight transparency (active, inactive)
+        "opacity 0.95 0.90, match:class ^(kitty)$"
       ];
     };
   };
