@@ -251,8 +251,12 @@ in
         "$mod SHIFT, P, exec, mkdir -p ~/Pictures/screenshots && hyprshot -m window -o ~/Pictures/screenshots"
         "$mod SHIFT, M, exec, mkdir -p ~/Pictures/screenshots && hyprshot -m output -o ~/Pictures/screenshots"
 
-        # Lock
-        "$mod, L, exec, hyprlock"
+        # Lock.
+        # NOTE: Hyprland keysym parsing is case-insensitive, so `$mod, L`
+        # and `$mod, l` are the same binding. `$mod, l` is already used
+        # above for vim-style `movefocus, r`, so lock lives on `$mod CTRL,
+        # L` to avoid the collision while keeping the L-for-Lock mnemonic.
+        "$mod CTRL, L, exec, hyprlock"
 
         # Clipboard
         "$mod, C, exec, wl-copy"
