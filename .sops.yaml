@@ -1,0 +1,3 @@
+creation_rules:
+  - path_regex: secrets/.*
+    age: "age1mhk590w38fhh9ml3965yy666h8jepurxxw0lfn7s2dmewye3qyksa4w4vs"
