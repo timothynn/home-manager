@@ -8,13 +8,16 @@
 # every nixosConfiguration, homeConfiguration, and devShell without building
 # any derivation, so the job completes in ~2 min on a free runner.
 #
-# The lockfile job (DeterminateSystems/flake-checker-action) fails if any
-# input is >30d stale or references an unmaintained nixpkgs branch.
+# The lockfile job (DeterminateSystems/flake-checker-action) warns when any
+# input drifts past 30d, but does not fail the workflow — staleness is
+# informational, not a merge blocker. Run `nix flake update` to clear it.
 #
-# The lint job runs deadnix + statix. It is set to `continue-on-error: true`
-# because both tools emit warnings for pre-existing style nits that are
-# independent of any given PR; surfacing them as warnings is useful, but
-# blocking merges on them is not.
+# The lint job runs deadnix + statix. Both steps carry
+# `continue-on-error: true` individually because the GitHub Actions
+# job-level flag only affects whether the overall workflow fails — it
+# does NOT cause subsequent steps to run after a failed step. Per-step
+# is required for the statix step to execute when deadnix finds
+# unused bindings.
 ##############################################################################
 name: nix
 
@@ -40,21 +43,23 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@main
         with:
           # The flake's nix.settings references hyprland.cachix.org /
-          # nix-community.cachix.org; `--accept-flake-config` is needed so
-          # the installer trusts those substituters during `flake check`.
+          # nix-community.cachix.org; `accept-flake-config = true` makes
+          # the installer trust those substituters during `flake check`.
           extra-conf: |
             accept-flake-config = true
 
-      - name: Enable magic Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+      # NOTE: DeterminateSystems/magic-nix-cache-action is deliberately NOT
+      # used here. It exhibits a race where the cache reports a store path
+      # as present but evicts it before nix reads it, producing spurious
+      # `error: path '/nix/store/...-source' is not valid` failures on
+      # --no-build eval jobs like this one. Plain cache.nixos.org via the
+      # installer is sufficient for evaluation.
 
       - name: nix flake check
-        # --no-build: evaluation only. GitHub free runners can't build
-        # Hyprland from source in a reasonable time, and the binary cache
-        # trust takes effect only on real nixos-rebuild runs anyway.
-        # --all-systems=false: only check outputs for the current system
-        # (x86_64-linux matches the flake's hardcoded `system`).
-        run: nix flake check --no-build --accept-flake-config
+        # --no-build: evaluation only. Free runners can't build Hyprland
+        # from source in a reasonable time, and the flake's binary-cache
+        # trust only takes effect on real nixos-rebuild runs anyway.
+        run: nix flake check --no-build --accept-flake-config --show-trace
 
   lockfile:
     name: flake.lock freshness
@@ -63,22 +68,33 @@ jobs:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/flake-checker-action@main
         with:
-          fail-mode: true
+          # Warn when an input is >30d stale, but don't block PR merges on
+          # it — inputs drift naturally and the remediation (`nix flake
+          # update`) is a deliberate action, not a CI-blocker.
+          fail-mode: false
 
   lint:
     name: deadnix + statix
     runs-on: ubuntu-latest
-    # Style warnings, not blockers. Reports show up in the run log but
-    # never block a merge.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
+      # Both lint steps are `continue-on-error` at the step level so that:
+      #   (a) findings from either tool do not fail the merge, and
+      #   (b) statix always runs even if deadnix returned non-zero.
+      # Per Devin Review: job-level `continue-on-error` only affects
+      # overall workflow outcome, not subsequent-step execution.
+
       - name: deadnix (unused bindings)
-        run: nix run nixpkgs#deadnix -- --fail .
+        continue-on-error: true
+        # No --fail — we want the output, not a merge gate. Findings on
+        # the generated hardware-configuration.nix (unused `pkgs`,
+        # `modulesPath`) are expected and should not block PRs.
+        run: nix run nixpkgs#deadnix -- .
 
       - name: statix (style lints)
+        continue-on-error: true
         run: nix run nixpkgs#statix -- check .
