@@ -333,7 +333,12 @@ in
         "size 80% 50%, match:class ^(dropdown-term)$"
         "move 10% 0, match:class ^(dropdown-term)$"
         "rounding 14, match:class ^(dropdown-term)$"
-        "bordersize 2, match:class ^(dropdown-term)$"
+        # NOTE: no per-window `bordersize` rule here. The 0.54 window-rule
+        # parser rejects that rule with `invalid field type bordersize`
+        # — the rule exists in the documentation but is not wired up as
+        # a windowrule in this build. The global `general.border_size`
+        # (see the `general` block above) applies to the dropdown term
+        # as it does to every other client, which is the look we want.
         "opacity 0.95 0.90, match:class ^(dropdown-term)$"
 
         # Workspace pinning
