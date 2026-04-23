@@ -1,0 +1,84 @@
+##############################################################################
+# .github/workflows/nix.yml
+#
+# Catches the class of errors that bit PR #3 before merge: undefined
+# option paths (e.g. programs.*.catppuccin → catppuccin.*), renamed HM
+# options (git.userName → git.settings.user.name, npm.npmrc → npm.settings),
+# and undefined variables (rfkill). `nix flake check --no-build` evaluates
+# every nixosConfiguration, homeConfiguration, and devShell without building
+# any derivation, so the job completes in ~2 min on a free runner.
+#
+# The lockfile job (DeterminateSystems/flake-checker-action) fails if any
+# input is >30d stale or references an unmaintained nixpkgs branch.
+#
+# The lint job runs deadnix + statix. It is set to `continue-on-error: true`
+# because both tools emit warnings for pre-existing style nits that are
+# independent of any given PR; surfacing them as warnings is useful, but
+# blocking merges on them is not.
+##############################################################################
+name: nix
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+# Cancel in-flight runs on the same ref when a new commit is pushed.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: nix flake check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          # The flake's nix.settings references hyprland.cachix.org /
+          # nix-community.cachix.org; `--accept-flake-config` is needed so
+          # the installer trusts those substituters during `flake check`.
+          extra-conf: |
+            accept-flake-config = true
+
+      - name: Enable magic Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: nix flake check
+        # --no-build: evaluation only. GitHub free runners can't build
+        # Hyprland from source in a reasonable time, and the binary cache
+        # trust takes effect only on real nixos-rebuild runs anyway.
+        # --all-systems=false: only check outputs for the current system
+        # (x86_64-linux matches the flake's hardcoded `system`).
+        run: nix flake check --no-build --accept-flake-config
+
+  lockfile:
+    name: flake.lock freshness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/flake-checker-action@main
+        with:
+          fail-mode: true
+
+  lint:
+    name: deadnix + statix
+    runs-on: ubuntu-latest
+    # Style warnings, not blockers. Reports show up in the run log but
+    # never block a merge.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: deadnix (unused bindings)
+        run: nix run nixpkgs#deadnix -- --fail .
+
+      - name: statix (style lints)
+        run: nix run nixpkgs#statix -- check .
