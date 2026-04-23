@@ -87,16 +87,17 @@ in
       "display-window" = "Windows";
       "display-filebrowser" = "Files";
 
-      # Tab selects the current row. The default `kb-row-tab` is
-      # `Tab,Control+i` (both byte-equivalent to ASCII 0x09), so leaving
-      # it at default — OR setting it to "" to "clear" it — still makes
-      # rofi emit `Binding \`Tab\` is already bound` on startup: the
-      # parser reads "" as "use default" in current rofi builds. Bind
-      # kb-row-tab to a real unused combo to actually move it off Tab.
-      "kb-row-select"    = "Tab";
-      "kb-row-tab"       = "Control+Shift+Tab";
-      "kb-mode-next"     = "Control+space";
-      "kb-mode-previous" = "Control+Shift+space";
+      # No `kb-*` overrides here. Rofi's stock defaults already form a
+      # non-colliding set (Tab=next row, Return=accept, Shift+Right/Left
+      # for mode switching, Control+Tab/Control+Shift+Tab for mode-next/
+      # previous). Every earlier override we tried here collided with
+      # another default because Nix attrsets serialise alphabetically —
+      # rofi parses `kb-row-select` before `kb-row-tab`, so setting
+      # `kb-row-select = "Tab"` races against kb-row-tab's default (also
+      # `Tab`) and fails with `Binding \`Tab\` is already bound`.
+      # If any binding *must* be re-customised, look up the live defaults
+      # with `rofi -dump-config` first to avoid alphabetical parse-order
+      # collisions.
     };
   };
 }
