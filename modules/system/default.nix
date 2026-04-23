@@ -45,18 +45,23 @@
   hardware.bluetooth.powerOnBoot = true;
   services.blueman.enable        = true;
 
-  # Intel Dual Band Wireless-AC 3160 firmware path and module defaults.
+  # Intel Dual Band Wireless-AC 3160 firmware.
+  # enableAllFirmware pulls in the full redistributable firmware set
+  # (strictly a superset of enableRedistributableFirmware) — some 3160
+  # revisions ship blobs that only land in the broader package.
+  # `pkgs.linux-firmware` is already what the options install; re-listing
+  # it under `hardware.firmware` is redundant and has been dropped.
   hardware.enableRedistributableFirmware = true;
-  hardware.firmware = [ pkgs.linux-firmware ];
+  hardware.enableAllFirmware             = true;
 
-  # Intel iwlwifi reliability tuning for older AC adapters (3160 in particular).
-  # 11n_disable=8 disables MIMO power-save which is the most reliable fix for
-  # the 3160's "unavailable" / constant-disconnect states; power_save=0 keeps
-  # the radio from parking; bt_coex_active=0 avoids BT-WiFi coex bugs on this
-  # chipset.
+  # Intel iwlwifi reliability tuning for the AC 3160. Kept intentionally
+  # minimal after the full recipe (11n_disable=8 + iwlmvm power_scheme=1)
+  # correlated with the radio stuck in "unavailable":
+  # - power_save=0      keeps the radio from parking on idle
+  # - bt_coex_active=0  avoids the well-known BT/WiFi coex hangs on this
+  #                     chipset (3160 shares its antenna with Bluetooth)
   boot.extraModprobeConfig = ''
-    options iwlwifi power_save=0 11n_disable=8 bt_coex_active=0
-    options iwlmvm power_scheme=1
+    options iwlwifi power_save=0 bt_coex_active=0
   '';
 
   # Run a recent kernel — every LTS bump carries iwlwifi / iwlmvm fixes that
