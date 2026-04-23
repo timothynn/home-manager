@@ -11,7 +11,12 @@
 
     networkmanager = {
       enable = true;
-      wifi.backend = "iwd";
+      # Use NM's default wifi backend (wpa_supplicant). iwd was tried for
+      # the AC 3160 but left the radio stuck "unavailable" in `nmcli d`
+      # (wlan0 present, no scans, wifi-p2p endpoint unavailable). Revert
+      # to wpa_supplicant — historical NM default, widest coverage, best
+      # debugged path on NixOS. iwd can be revisited after the laptop is
+      # stable on wpa_supplicant.
     };
 
     firewall = {
@@ -20,12 +25,11 @@
     };
   };
 
-  # Wi-Fi stack for Intel Dual Band Wireless-AC 3160 (iwlwifi).
-  # NetworkManager drives iwd via `wifi.backend = "iwd"` above and owns IP
-  # configuration, so iwd stays at defaults here — enabling its own network
-  # configuration or a non-existent `[Settings]` block causes iwd to refuse
-  # to expose the radio (the "wlp85s0 unavailable" symptom).
-  networking.wireless.iwd.enable = true;
+  # Wi-Fi stack for Intel Dual Band Wireless-AC 3160 (iwlwifi) is owned by
+  # NetworkManager + wpa_supplicant (NM default). `networking.wireless.*`
+  # (wpa_supplicant *standalone*) and `networking.wireless.iwd` are both
+  # deliberately disabled: NM will manage wpa_supplicant itself. Firmware,
+  # kernel module, and iwlwifi tuning live in modules/system/default.nix.
 
   services.resolved = {
     enable = true;
