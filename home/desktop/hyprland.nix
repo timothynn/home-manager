@@ -129,15 +129,12 @@ in
       };
 
       # ── Gestures (3-finger horizontal swipes -> workspace left/right) ─────
-      gestures = {
-        workspace_swipe          = true;
-        workspace_swipe_fingers  = 3;
-        workspace_swipe_distance = 300;
-        workspace_swipe_invert   = false;
-        workspace_swipe_cancel_ratio = 0.5;
-        # Always complete the swipe — prevents cancellation on slow drags.
-        workspace_swipe_forever  = true;
-      };
+      # Hyprland 0.51+ replaced the old `workspace_swipe*` options with the
+      # 1:1 trackpad `gesture = fingers, direction, action, options` syntax.
+      # See https://wiki.hypr.land/Configuring/Gestures/
+      gesture = [
+        "3, horizontal, workspace"
+      ];
 
       # ── Layouts ──────────────────────────────────────────────────────────
       dwindle = {
@@ -285,32 +282,34 @@ in
       ];
 
       # ── Window rules ─────────────────────────────────────────────────────
-      # Using `windowrulev2` (hyprland will warn it's deprecated but accepts this syntax)
-      # Use windowrulev2 but keep rules simple to avoid parsing issues
-      windowrulev2 = [
+      # Hyprland 0.53 removed `windowrulev2` and overhauled the syntax: props
+      # use a `match:` prefix, boolean effects require a value (`float on`),
+      # and several names were snake_cased (`suppressevent` -> `suppress_event`).
+      # See https://wiki.hypr.land/Configuring/Window-Rules/
+      windowrule = [
         # Suppress unwanted maximize requests from apps
-        "suppressevent maximize, class:.*"
+        "match:class .*, suppress_event maximize"
 
         # Float common utility windows
-        "float, class:^(pavucontrol)$"
-        "float, class:^(blueman-manager)$"
-        "float, class:^(nm-connection-editor)$"
-        "float, title:^(Picture-in-Picture)$"
-        "float, class:^(xdg-desktop-portal)$"
-        "float, class:^(dropdown-term)$"
+        "match:class ^(pavucontrol)$, float on"
+        "match:class ^(blueman-manager)$, float on"
+        "match:class ^(nm-connection-editor)$, float on"
+        "match:title ^(Picture-in-Picture)$, float on"
+        "match:class ^(xdg-desktop-portal)$, float on"
+        "match:class ^(dropdown-term)$, float on"
 
         # Pin and place the dropdown terminal
-        "pin, class:^(dropdown-term)$"
-        "workspace special:dropdown, class:^(dropdown-term)$"
-        "size 100% 40%, class:^(dropdown-term)$"
-        "move 0 0, class:^(dropdown-term)$"
+        "match:class ^(dropdown-term)$, pin on"
+        "match:class ^(dropdown-term)$, workspace special:dropdown"
+        "match:class ^(dropdown-term)$, size 100% 40%"
+        "match:class ^(dropdown-term)$, move 0 0"
 
         # Workspace pinning
-        "workspace 2, class:^(firefox)$"
-        "workspace 3, class:^(code|cursor)$"
+        "match:class ^(firefox)$, workspace 2"
+        "match:class ^(code|cursor)$, workspace 3"
 
         # Kitty terminal — slight transparency
-        "opacity 0.95 0.90, class:^(kitty)$"
+        "match:class ^(kitty)$, opacity 0.95 0.90"
       ];
     };
   };
