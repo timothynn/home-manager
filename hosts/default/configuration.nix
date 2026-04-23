@@ -94,12 +94,17 @@
 
   nixpkgs.config = {
     allowUnfree = true;
-    # .NET is disabled for now. Re-enable these pins if you reinstate
-    # dotnet in home.nix / flake.nix.
-    # permittedInsecurePackages = [
-    #   "dotnet-sdk-6.0.428"
-    #   "dotnet-sdk-7.0.410"
-    # ];
+    # .NET 6 only (see flake.nix for matching pins). The separate
+    # `pkgs = import nixpkgs { … }` in flake.nix does not share config
+    # with the NixOS module's `nixpkgs.config`, so these pins have to be
+    # repeated here or `sudo nixos-rebuild` trips the insecure gate
+    # before it ever reaches home-manager.
+    permittedInsecurePackages = [
+      "dotnet-sdk-6.0.428"
+      "dotnet-sdk-wrapped-6.0.428"
+      "dotnet-runtime-6.0.36"
+      "aspnetcore-runtime-6.0.36"
+    ];
   };
 
   system.stateVersion = "25.05";
