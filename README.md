@@ -73,10 +73,12 @@ sudo nixos-rebuild switch --flake .#default      # auto laptop/desktop via DMI c
 # sudo nixos-rebuild switch --flake .#desktop
 ```
 
-Home Manager is wired in as a NixOS module (`useGlobalPkgs = true; useUserPackages = true;`), so the user profile is built as part of `nixos-rebuild switch` — you do **not** need to run `home-manager switch` separately for `tim`. There is also a standalone `homeConfigurations.tim` output if you want to target HM by itself:
+Home Manager is wired in as a NixOS module (`useGlobalPkgs = true; useUserPackages = true;`), so the user profile is built as part of `nixos-rebuild switch` — you do **not** need to run `home-manager switch` separately for `tim`. The `home-manager` CLI (pinned to the flake input, not nixpkgs) is installed system-wide so `home-manager generations` / `home-manager expire-generations` / ad-hoc rebuilds work post-switch:
 
 ```bash
-nix run home-manager/master -- switch --flake .#tim
+home-manager switch --flake /etc/nixos#tim    # standalone HM rebuild
+home-manager generations                       # list past user profiles
+home-manager expire-generations "-30 days"     # prune old generations
 ```
 
 ---
@@ -181,8 +183,8 @@ sudo nixos-rebuild switch --flake /etc/nixos#default
 # Dry-run eval without activating
 sudo nixos-rebuild dry-build --flake /etc/nixos#default
 
-# Home Manager only (standalone output)
-nix run home-manager/master -- switch --flake /etc/nixos#tim
+# Home Manager only (standalone output) — CLI is installed system-wide
+home-manager switch --flake /etc/nixos#tim
 
 # Update all inputs (or pick one with --update-input)
 nix flake update
