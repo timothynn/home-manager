@@ -19,6 +19,9 @@
     ../../modules/system/host-role.nix
     ../../modules/system/secrets.nix
 
+    # Services
+    ../../modules/services/seabury-vpn.nix
+
     # Desktop stack (system-layer: service enablement, env vars, SDDM)
     ../../modules/desktop/hyprland.nix
     ../../modules/desktop/sddm.nix
