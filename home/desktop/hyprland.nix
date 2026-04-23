@@ -44,6 +44,17 @@ in
         "${pkgs.networkmanagerapplet}/bin/nm-applet --indicator"
         "${pkgs.blueman}/bin/blueman-applet"
         "hyprctl setcursor catppuccin-mocha-dark-cursors 24"
+
+        # Dropdown terminal — launched at session start and parked on the
+        # special:dropdown workspace by the window rules below. This means
+        # the first `$mod+grave` press is instant (no cold-start lag) and
+        # toggling preserves shell state / history across show/hide.
+        # Styling is applied via --override so the dropdown is visually
+        # distinct from a normal kitty (smaller padding, no tab bar,
+        # slightly more transparent). Kept as a single line because
+        # Hyprland's config parser treats each list entry as one `exec-once
+        # = …` directive and does not process backslash-newline.
+        "kitty --class dropdown-term --title dropdown-terminal --override background_opacity=0.85 --override window_padding_width=12 --override hide_window_decorations=yes --override tab_bar_style=hidden --override enable_audio_bell=no"
       ];
 
       # ── Environment variables ────────────────────────────────────────────
@@ -163,16 +174,20 @@ in
       "$browser"  = "firefox";
       "$launcher" = "rofi -show drun";
       "$filemanager" = "nautilus";
-      "$dropdown" = "kitty --class dropdown-term --title dropdown-terminal";
 
       # ── Keybinds ─────────────────────────────────────────────────────────
       bind = [
         # Applications
         "$mod, Return, exec, $terminal"
-        "$mod, grave,  exec, $dropdown"
         "$mod, B,      exec, $browser"
         "$mod, SPACE,  exec, $launcher"
         "$mod, E,      exec, $filemanager"
+
+        # Dropdown terminal — single-key Guake/Yakuake-style toggle.
+        # The instance is spawned at session start (see exec-once) and
+        # parked on the special:dropdown workspace by the window rules,
+        # so this toggle just shows/hides an already-running kitty.
+        "$mod, grave, togglespecialworkspace, dropdown"
 
         # Window management
         "$mod, Q,      killactive"
@@ -227,11 +242,12 @@ in
         "$mod SHIFT, 9, movetoworkspace, 9"
         "$mod SHIFT, 0, movetoworkspace, 10"
 
-        # Scratchpad
+        # Scratchpad (generic "magic" special workspace — send any window
+        # here with `$mod SHIFT, D`, toggle with `$mod, S`). This is
+        # separate from the dropdown terminal above, which has its own
+        # dedicated special workspace + pre-spawned kitty instance.
         "$mod, S,       togglespecialworkspace, magic"
         "$mod SHIFT, D, movetoworkspace, special:magic"
-        "$mod, apostrophe, togglespecialworkspace, dropdown"
-        "$mod SHIFT, apostrophe, movetoworkspace, special:dropdown"
 
         # Scroll through workspaces
         "$mod, mouse_down, workspace, e+1"
@@ -306,11 +322,19 @@ in
         "float true, match:class ^(xdg-desktop-portal)$"
         "float true, match:class ^(dropdown-term)$"
 
-        # Pin and place the dropdown terminal
+        # Dropdown terminal — park on its dedicated special workspace and
+        # give it a Guake/Yakuake-style look: 80% wide, 50% tall, centered
+        # horizontally, slammed to the top. `pin true` keeps it visible
+        # across workspace switches (when toggled in); the
+        # specialWorkspace animation (`overshot, fade` — configured in
+        # the animation section above) provides the slide-in effect.
         "pin true, match:class ^(dropdown-term)$"
-        "workspace special:dropdown, match:class ^(dropdown-term)$"
-        "size 100% 40%, match:class ^(dropdown-term)$"
-        "move 0 0, match:class ^(dropdown-term)$"
+        "workspace special:dropdown silent, match:class ^(dropdown-term)$"
+        "size 80% 50%, match:class ^(dropdown-term)$"
+        "move 10% 0, match:class ^(dropdown-term)$"
+        "rounding 14, match:class ^(dropdown-term)$"
+        "bordersize 2, match:class ^(dropdown-term)$"
+        "opacity 0.95 0.90, match:class ^(dropdown-term)$"
 
         # Workspace pinning
         "workspace 2, match:class ^(firefox)$"
