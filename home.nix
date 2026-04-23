@@ -7,21 +7,26 @@
 ##############################################################################
 { config, pkgs, lib, inputs ? {}, username ? "tim", ... }:
 
-let
-  # Multi-SDK .NET via the nixpkgs-blessed combinator: 6, 8, 10 side-by-side
-  # on the same `dotnet` binary so `global.json` / `TargetFramework` routing
-  # works without a devShell. Each SDK is lib.optional-guarded so eval does
-  # not fail on channels that have not yet packaged one of them (.NET 10
-  # especially is recent on nixos-unstable).
-  dotnetCorePackages = pkgs.dotnetCorePackages;
-  dotnetSdkList =
-       (lib.optional (dotnetCorePackages ? sdk_6_0)  dotnetCorePackages.sdk_6_0)
-    ++ (lib.optional (dotnetCorePackages ? sdk_8_0)  dotnetCorePackages.sdk_8_0)
-    ++ (lib.optional (dotnetCorePackages ? sdk_10_0) dotnetCorePackages.sdk_10_0);
-  dotnetCombined =
-    if dotnetSdkList == [] then null
-    else dotnetCorePackages.combinePackages dotnetSdkList;
-in
+# NOTE: .NET is disabled. Uncomment the let-binding below and the
+# `++ (lib.optional …)` on home.packages to re-enable SDKs 6/8/10.
+# See also flake.nix (permittedInsecurePackages + dotnet devShell) and
+# hosts/default/configuration.nix (permittedInsecurePackages).
+#
+# let
+#   # Multi-SDK .NET via the nixpkgs-blessed combinator: 6, 8, 10 side-by-side
+#   # on the same `dotnet` binary so `global.json` / `TargetFramework` routing
+#   # works without a devShell. Each SDK is lib.optional-guarded so eval does
+#   # not fail on channels that have not yet packaged one of them (.NET 10
+#   # especially is recent on nixos-unstable).
+#   dotnetCorePackages = pkgs.dotnetCorePackages;
+#   dotnetSdkList =
+#        (lib.optional (dotnetCorePackages ? sdk_6_0)  dotnetCorePackages.sdk_6_0)
+#     ++ (lib.optional (dotnetCorePackages ? sdk_8_0)  dotnetCorePackages.sdk_8_0)
+#     ++ (lib.optional (dotnetCorePackages ? sdk_10_0) dotnetCorePackages.sdk_10_0);
+#   dotnetCombined =
+#     if dotnetSdkList == [] then null
+#     else dotnetCorePackages.combinePackages dotnetSdkList;
+# in
 
 {
   # ── Identity ───────────────────────────────────────────────────────────────
@@ -124,7 +129,8 @@ in
     cowsay
     hello
     wl-clipboard
-  ]) ++ (lib.optional (dotnetCombined != null) dotnetCombined);
+  ]);
+  # ]) ++ (lib.optional (dotnetCombined != null) dotnetCombined);   # re-enable with the let-binding above
 
   # ── Session variables ───────────────────────────────────────────────────────
   home.sessionVariables = {

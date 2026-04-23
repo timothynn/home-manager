@@ -62,19 +62,21 @@
       inherit system;
       config = {
         allowUnfree = true;
-        permittedInsecurePackages = [
-          "dotnet-sdk-6.0.428"
-          "dotnet-sdk-7.0.410"
-        ];
+        # .NET is disabled for now. Re-enable these pins alongside the
+        # dotnetSdks let-binding and the `dotnet` devShell below.
+        # permittedInsecurePackages = [
+        #   "dotnet-sdk-6.0.428"
+        #   "dotnet-sdk-7.0.410"
+        # ];
       };
     };
-    dotnetSdks = builtins.concatLists [
-      (lib.optionals (pkgs ? dotnet-sdk_6) [ pkgs.dotnet-sdk_6 ])
-      (lib.optionals (pkgs ? dotnet-sdk_7) [ pkgs.dotnet-sdk_7 ])
-      (lib.optionals (pkgs ? dotnet-sdk_8) [ pkgs.dotnet-sdk_8 ])
-      (lib.optionals (pkgs ? dotnet-sdk_9) [ pkgs.dotnet-sdk_9 ])
-      (lib.optionals (pkgs ? dotnet-sdk_10) [ pkgs.dotnet-sdk_10 ])
-    ];
+    # dotnetSdks = builtins.concatLists [
+    #   (lib.optionals (pkgs ? dotnet-sdk_6) [ pkgs.dotnet-sdk_6 ])
+    #   (lib.optionals (pkgs ? dotnet-sdk_7) [ pkgs.dotnet-sdk_7 ])
+    #   (lib.optionals (pkgs ? dotnet-sdk_8) [ pkgs.dotnet-sdk_8 ])
+    #   (lib.optionals (pkgs ? dotnet-sdk_9) [ pkgs.dotnet-sdk_9 ])
+    #   (lib.optionals (pkgs ? dotnet-sdk_10) [ pkgs.dotnet-sdk_10 ])
+    # ];
   in
   {
     nixosConfigurations = {
@@ -130,17 +132,19 @@
         ];
       };
 
-      dotnet = pkgs.mkShell {
-        packages = dotnetSdks ++ (with pkgs; [
-          dotnet-ef
-          nuget
-          powershell
-        ]);
-        shellHook = ''
-          export DOTNET_CLI_TELEMETRY_OPTOUT=1
-          export DOTNET_NOLOGO=1
-        '';
-      };
+      # .NET is disabled for now. Re-enable alongside dotnetSdks and the
+      # permittedInsecurePackages pins at the top of this file.
+      # dotnet = pkgs.mkShell {
+      #   packages = dotnetSdks ++ (with pkgs; [
+      #     dotnet-ef
+      #     nuget
+      #     powershell
+      #   ]);
+      #   shellHook = ''
+      #     export DOTNET_CLI_TELEMETRY_OPTOUT=1
+      #     export DOTNET_NOLOGO=1
+      #   '';
+      # };
     };
 
     apps.${system}.auto-switch = {

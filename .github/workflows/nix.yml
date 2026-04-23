@@ -77,7 +77,8 @@ jobs:
 
           eval_one "homeConfigurations.tim.activationPackage.drvPath"
 
-          for shell in node python dotnet rust; do
+          # `dotnet` omitted — the devShell is commented out in flake.nix.
+          for shell in node python rust; do
             eval_one "devShells.x86_64-linux.${shell}.drvPath"
           done
 
