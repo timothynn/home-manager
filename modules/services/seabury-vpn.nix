@@ -55,7 +55,7 @@ in
 
     serviceConfig = {
       Type       = "notify";
-      ExecStart  = "${pkgs.openvpn}/bin/openvpn --suppress-timestamps --nobind --auth-nocache --config ${vpnConf}";
+      ExecStart  = "${pkgs.openvpn}/bin/openvpn --suppress-timestamps --nobind --auth-nocache --mssfix 1340 --config ${vpnConf}";
       Restart    = "on-failure";
       RestartSec = "10s";
       # Allow openvpn to create the tun device and modify routes.

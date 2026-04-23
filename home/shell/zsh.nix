@@ -8,15 +8,17 @@
 { pkgs, config, ... }:
 
 {
+  # catppuccin-nix option path for zsh-syntax-highlighting is the top-level
+  # `catppuccin.zsh-syntax-highlighting.enable` (guarded by
+  # `programs.zsh.syntaxHighlighting.enable` below).
+  catppuccin.zsh-syntax-highlighting.enable = true;
+
   programs.zsh = {
     enable              = true;
     dotDir              = "${config.home.homeDirectory}/.config/zsh";
     autosuggestion.enable  = true;
     enableCompletion    = true;
-    syntaxHighlighting = {
-      enable             = true;
-      catppuccin.enable  = true;
-    };
+    syntaxHighlighting.enable = true;
 
     oh-my-zsh = {
       enable  = true;

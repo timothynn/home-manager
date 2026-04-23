@@ -17,16 +17,17 @@
   ];
 
   # Declarative ~/.npmrc — pinning `prefix` is the piece that redirects
-  # `npm -g` to a user-owned directory.
+  # `npm -g` to a user-owned directory. HM's programs.npm module expects
+  # an attrset of INI key/values via `settings`, not a raw string.
   programs.npm = {
     enable = true;
-    npmrc = ''
-      prefix=${config.home.homeDirectory}/.npm-global
-      init-author-name=timothynn
-      init-author-email=timothynn08@gmail.com
-      fund=false
-      audit=false
-    '';
+    settings = {
+      prefix            = "${config.home.homeDirectory}/.npm-global";
+      init-author-name  = "timothynn";
+      init-author-email = "timothynn08@gmail.com";
+      fund              = false;
+      audit             = false;
+    };
   };
 
   # Make sure the prefix exists before the first `npm -g` invocation so

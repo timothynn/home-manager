@@ -179,8 +179,12 @@
     ntfs3g
     exfatprogs
 
-    # Wi-Fi diagnostics (Intel AC 3160 troubleshooting)
-    rfkill iw wirelesstools
+    # Wi-Fi diagnostics (Intel AC 3160 troubleshooting).
+    # Note: `rfkill` is no longer a standalone package in nixpkgs — it's
+    # provided by `util-linux`, which is already pulled in by the base
+    # system. `wirelesstools` ships `iwconfig` / `iwlist`; `iw` is the
+    # modern nl80211 CLI.
+    iw wirelesstools
   ];
 
   # ---------------------------------------------------------------------------
