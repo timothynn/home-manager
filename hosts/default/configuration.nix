@@ -44,6 +44,20 @@
   environment.shells = [ pkgs.zsh pkgs.nushell ];
 
   # ---------------------------------------------------------------------------
+  # Home Manager CLI, pinned to the flake input (NOT nixpkgs.home-manager,
+  # which can drift ahead/behind the module version and mis-activate the
+  # user profile). Home Manager is wired in as a NixOS module
+  # (see flake.nix, `home-manager.nixosModules.home-manager`), so the user
+  # profile is already rebuilt alongside the system on every
+  # `nixos-rebuild switch` — this package is strictly for running
+  # `home-manager switch --flake .#${username}` / `home-manager generations`
+  # / `home-manager expire-generations` by hand.
+  # ---------------------------------------------------------------------------
+  environment.systemPackages = [
+    inputs.home-manager.packages.${pkgs.stdenv.hostPlatform.system}.default
+  ];
+
+  # ---------------------------------------------------------------------------
   # Nix daemon & store settings
   # ---------------------------------------------------------------------------
   nix = {
