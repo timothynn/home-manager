@@ -9,7 +9,7 @@
 { config, pkgs, ... }:
 
 let
-  wallpaper = "${config.home.homeDirectory}/Pictures/wallpapers/voxel-city.jpg";
+  wallpaper = "${config.home.homeDirectory}/Pictures/wallpapers/catppuccin-mocha-ridges.jpg";
 in
 
 {
