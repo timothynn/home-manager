@@ -282,34 +282,34 @@ in
       ];
 
       # ── Window rules ─────────────────────────────────────────────────────
-      # Hyprland 0.53 removed `windowrulev2` and overhauled the syntax: props
-      # use a `match:` prefix, boolean effects require a value (`float on`),
-      # and several names were snake_cased (`suppressevent` -> `suppress_event`).
+      # Hyprland 0.53+ `windowrule` grammar: RULE first, match conditions
+      # after as `key:value` pairs. Booleans (`float`, `pin`) are rules
+      # on their own — no trailing `on`. `suppressevent` is one word.
       # See https://wiki.hypr.land/Configuring/Window-Rules/
       windowrule = [
         # Suppress unwanted maximize requests from apps
-        "match:class .*, suppress_event maximize"
+        "suppressevent maximize, class:.*"
 
         # Float common utility windows
-        "match:class ^(pavucontrol)$, float on"
-        "match:class ^(blueman-manager)$, float on"
-        "match:class ^(nm-connection-editor)$, float on"
-        "match:title ^(Picture-in-Picture)$, float on"
-        "match:class ^(xdg-desktop-portal)$, float on"
-        "match:class ^(dropdown-term)$, float on"
+        "float, class:^(pavucontrol)$"
+        "float, class:^(blueman-manager)$"
+        "float, class:^(nm-connection-editor)$"
+        "float, title:^(Picture-in-Picture)$"
+        "float, class:^(xdg-desktop-portal)$"
+        "float, class:^(dropdown-term)$"
 
         # Pin and place the dropdown terminal
-        "match:class ^(dropdown-term)$, pin on"
-        "match:class ^(dropdown-term)$, workspace special:dropdown"
-        "match:class ^(dropdown-term)$, size 100% 40%"
-        "match:class ^(dropdown-term)$, move 0 0"
+        "pin, class:^(dropdown-term)$"
+        "workspace special:dropdown, class:^(dropdown-term)$"
+        "size 100% 40%, class:^(dropdown-term)$"
+        "move 0 0, class:^(dropdown-term)$"
 
         # Workspace pinning
-        "match:class ^(firefox)$, workspace 2"
-        "match:class ^(code|cursor)$, workspace 3"
+        "workspace 2, class:^(firefox)$"
+        "workspace 3, class:^(code|cursor)$"
 
         # Kitty terminal — slight transparency
-        "match:class ^(kitty)$, opacity 0.95 0.90"
+        "opacity 0.95 0.90, class:^(kitty)$"
       ];
     };
   };
