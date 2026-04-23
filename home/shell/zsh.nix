@@ -5,7 +5,7 @@
 # and Catppuccin syntax-highlighting colours via catppuccin-nix.
 # The prompt is handled by Starship (see home/shell/starship.nix).
 ##############################################################################
-{ pkgs, config, lib, ... }:
+{ config, ... }:
 
 {
   # catppuccin-nix option path for zsh-syntax-highlighting is the top-level
@@ -13,17 +13,25 @@
   # `programs.zsh.syntaxHighlighting.enable` below).
   catppuccin.zsh-syntax-highlighting.enable = true;
 
-  # Oh-My-Zsh's `docker` plugin tries to `cp` the docker CLI's completion
-  # into `$ZSH_CACHE_DIR/completions/` at first shell start. `$ZSH_CACHE_DIR`
-  # defaults to `$ZSH/cache`, which lives in the read-only Nix store under
-  # HM, so the plugin transparently falls back to `~/.cache/oh-my-zsh/`.
-  # If that directory doesn't exist (fresh machine / fresh user), `cp`
-  # fails with `Permission denied`. Pre-create it with user ownership so
-  # the plugin's first-run warm-up completes silently.
-  home.activation.ensureOmzCompletionsDir =
-    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      run mkdir -p "${config.home.homeDirectory}/.cache/oh-my-zsh/completions"
-    '';
+  # Oh-My-Zsh's `docker` and `kubectl` plugins are REMOVED from the plugin
+  # list below. Both copy their CLI's completion into
+  # `$ZSH_CACHE_DIR/completions/` at first shell start, and under HM
+  # `$ZSH_CACHE_DIR` defaults to `$ZSH/cache` (read-only Nix store) with a
+  # fallback to `~/.cache/oh-my-zsh/`. If that fallback dir was ever
+  # created or touched by a root-running shell (e.g. `sudo zsh`), the
+  # unprivileged plugin run later fails with:
+  #   cp: cannot create regular file '/home/tim/.cache/oh-my-zsh/completions/_docker': Permission denied
+  # A user-run `mkdir -p` activation can't fix a root-owned subtree.
+  #
+  # This is redundant on NixOS anyway — `pkgs.docker` and `pkgs.kubectl`
+  # both ship their zsh completions under
+  # `$out/share/zsh/site-functions/`, which `programs.zsh.enableCompletion`
+  # pulls into `fpath` automatically. The OMZ plugin duplicates that
+  # work and only adds the permission bug.
+  #
+  # The previously-added activation script that pre-created
+  # `~/.cache/oh-my-zsh/completions` is dropped for the same reason —
+  # nothing uses that directory now, so there is nothing to ensure.
 
   programs.zsh = {
     enable              = true;
@@ -38,8 +46,11 @@
         "git"
         "sudo"
         "z"
-        "docker"
-        "kubectl"
+        # "docker"   — removed: pkgs.docker ships `_docker` into fpath via
+        #              `$out/share/zsh/site-functions/`; OMZ's plugin only
+        #              duplicates that and triggers the ~/.cache/oh-my-zsh
+        #              permission-denied bug documented above.
+        # "kubectl"  — removed: same story for pkgs.kubectl.
         "fzf"
         "colored-man-pages"
       ];
