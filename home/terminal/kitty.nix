@@ -10,6 +10,9 @@
   programs.kitty = {
     enable = true;
 
+    # Catppuccin Mocha theme supplied by catppuccin-nix.
+    catppuccin.enable = true;
+
     font = {
       name = "JetBrainsMono Nerd Font";
       size = 11;

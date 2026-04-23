@@ -13,7 +13,7 @@ let
     accent     = "mauve";
     font       = "JetBrains Mono";
     fontSize   = "10";
-    background = ../../voxel-city.jpg;
+    background = ../../wallpapers/catppuccin-mocha-ridges.jpg;
   };
 in
 {

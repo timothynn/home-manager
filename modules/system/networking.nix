@@ -21,17 +21,11 @@
   };
 
   # Wi-Fi stack for Intel Dual Band Wireless-AC 3160 (iwlwifi).
-  networking.wireless.iwd = {
-    enable = true;
-    settings = {
-      Settings = {
-        AutoConnect = true;
-      };
-      General = {
-        EnableNetworkConfiguration = true;
-      };
-    };
-  };
+  # NetworkManager drives iwd via `wifi.backend = "iwd"` above and owns IP
+  # configuration, so iwd stays at defaults here — enabling its own network
+  # configuration or a non-existent `[Settings]` block causes iwd to refuse
+  # to expose the radio (the "wlp85s0 unavailable" symptom).
+  networking.wireless.iwd.enable = true;
 
   services.resolved = {
     enable = true;
