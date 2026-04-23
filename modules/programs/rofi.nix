@@ -87,12 +87,14 @@ in
       "display-window" = "Windows";
       "display-filebrowser" = "Files";
 
-      # Tab selects the current row; kb-row-tab is cleared because in terminals
-      # and Wayland input Control+I is byte-identical to Tab (ASCII 0x09) — the
-      # previous mapping `kb-row-tab = "Control+i"` silently collided with
-      # `kb-row-select = "Tab"` and rofi refused the keymap.
+      # Tab selects the current row. The default `kb-row-tab` is
+      # `Tab,Control+i` (both byte-equivalent to ASCII 0x09), so leaving
+      # it at default — OR setting it to "" to "clear" it — still makes
+      # rofi emit `Binding \`Tab\` is already bound` on startup: the
+      # parser reads "" as "use default" in current rofi builds. Bind
+      # kb-row-tab to a real unused combo to actually move it off Tab.
       "kb-row-select"    = "Tab";
-      "kb-row-tab"       = "";
+      "kb-row-tab"       = "Control+Shift+Tab";
       "kb-mode-next"     = "Control+space";
       "kb-mode-previous" = "Control+Shift+space";
     };
