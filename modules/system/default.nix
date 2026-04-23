@@ -54,14 +54,32 @@
   hardware.enableRedistributableFirmware = true;
   hardware.enableAllFirmware             = true;
 
-  # Intel iwlwifi reliability tuning for the AC 3160. Kept intentionally
-  # minimal after the full recipe (11n_disable=8 + iwlmvm power_scheme=1)
-  # correlated with the radio stuck in "unavailable":
-  # - power_save=0      keeps the radio from parking on idle
-  # - bt_coex_active=0  avoids the well-known BT/WiFi coex hangs on this
-  #                     chipset (3160 shares its antenna with Bluetooth)
+  # Intel iwlwifi tuning for the AC 3160. Runtime dmesg on this box shows:
+  #
+  #   iwlwifi 0000:55:00.0: FW error in SYNC CMD UNKNOWN
+  #   iwlwifi 0000:55:00.0: Failed to send DQA enabling command: -5
+  #   iwlwifi 0000:55:00.0: Device is not enabled - cannot dump error
+  #
+  # Root cause: the AC 3160's latest public firmware is
+  # `iwlwifi-3160-ucode-17` and modern iwlwifi sends a "Dynamic Queue
+  # Allocation" enable command firmware 17 doesn't fully implement. The
+  # firmware rejects the command with -EIO, the driver bails, and the
+  # radio sticks at "unavailable" / "Could not set interface UP".
+  #
+  # The documented workaround is to force the driver onto the pre-DQA
+  # code path by disabling 802.11n (`11n_disable=1`) and moving crypto
+  # into software (`swcrypto=1`). Combined with the two existing AC 3160
+  # fixes (power_save=0 to stop the radio parking, bt_coex_active=0 to
+  # avoid BT/WiFi coex hangs on this antenna-sharing chipset), this gets
+  # the 3160 back to 2.4/5 GHz 11g/11a association at reduced throughput
+  # — the trade-off for no 11n is ~54 Mbit/s max instead of ~150 Mbit/s,
+  # which is almost always fine over a home link.
+  #
+  # If this combo does not fix the DQA error, the next knob is
+  # `boot.kernelPackages = pkgs.linuxPackages_lts` below — an older
+  # kernel whose iwlwifi doesn't assume DQA firmware support.
   boot.extraModprobeConfig = ''
-    options iwlwifi power_save=0 bt_coex_active=0
+    options iwlwifi power_save=0 bt_coex_active=0 11n_disable=1 swcrypto=1
   '';
 
   # Run a recent kernel — every LTS bump carries iwlwifi / iwlmvm fixes that
