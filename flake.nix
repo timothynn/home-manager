@@ -69,6 +69,10 @@
           "dotnet-sdk-6.0.428"
           "dotnet-sdk-wrapped-6.0.428"
           "dotnet-runtime-6.0.36"
+          # beekeeper-studio bundles Electron 32 which is EOL. Upstream
+          # nixpkgs keeps the attr behind the insecure gate until they
+          # migrate to a newer Electron. Trusted SQL IDE; local dev use.
+          "beekeeper-studio-5.5.7"
           "aspnetcore-runtime-6.0.36"
         ];
       };
