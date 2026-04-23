@@ -36,8 +36,12 @@ in
       monitor = ",preferred,auto,1";
 
       # ── Autostart ───────────────────────────────────────────────────────
+      # NOTE: hyprpaper is started by its Home Manager systemd user service
+      # (see home/desktop/hyprpaper.nix). Do NOT also launch it from
+      # exec-once — that race was why the wallpaper kept coming up black
+      # (daemon booted before the monitor was live, `wallpaper = ,<path>`
+      # silently no-op'd on every output).
       exec-once = [
-        "hyprpaper"
         "waybar"
         "mako"
         "hypridle"

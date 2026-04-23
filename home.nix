@@ -95,7 +95,9 @@ in
 
     # Dev runtimes / SDKs (nodejs is installed via home/shell/node.nix
     # alongside a user-writable npm global prefix).
-    postgresql_18
+    # Pinned to v16 for compatibility with the projects currently
+    # targeting that major; bump deliberately when you upgrade schemas.
+    postgresql_16
     rustup
 
     # DevOps / network
@@ -105,6 +107,7 @@ in
     # here as a user binary for ad-hoc `.ovpn` profiles.
     openvpn
     dbeaver-bin
+    beekeeper-studio
     github-copilot-cli
     net-tools
     bluez
@@ -115,7 +118,8 @@ in
     yt-dlp
 
     # Hyprland ecosystem extras
-    hyprpaper   # wallpaper daemon invoked by `exec-once = hyprpaper`
+    # hyprpaper is managed by services.hyprpaper (see home/desktop/hyprpaper.nix)
+    # which installs the package and runs it as a systemd user service.
     hyprsunset
     hyprshot
     hyprspace
