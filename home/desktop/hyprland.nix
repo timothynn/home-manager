@@ -58,11 +58,46 @@ in
       ];
 
       # ── Environment variables ────────────────────────────────────────────
+      # Exported into every client Hyprland spawns. The Qt/GTK theme
+      # entries duplicate what HM's `qt.platformTheme.name` and
+      # `gtk.theme` set via `home.sessionVariables`, but SDDM-spawned
+      # Wayland sessions don't always source the login shell, so apps
+      # launched straight out of Hyprland (waybar, rofi-exec, etc.) can
+      # miss them. Declaring them here too is belt-and-suspenders and
+      # costs nothing.
       env = [
+        # Cursor
         "XCURSOR_SIZE,24"
         "XCURSOR_THEME,catppuccin-mocha-dark-cursors"
+
+        # GTK — force dark + catppuccin for clients that ignore GSettings
+        # (typically anything launched via `.desktop` without a
+        # DBus-activated session, e.g. AppImages, Flatpaks without the
+        # GSettings portal).
+        "GTK_THEME,catppuccin-mocha-mauve-standard+default"
         "GDK_SCALE,1"
+        "GDK_BACKEND,wayland,x11"
+
+        # Qt — kvantum engine (see modules/theme/qt.nix). Setting both
+        # QT_QPA_PLATFORMTHEME and QT_STYLE_OVERRIDE avoids an edge case
+        # where Qt5 apps respect the platform theme but Qt6 apps ignore
+        # it unless the style override is also set.
+        "QT_QPA_PLATFORMTHEME,kvantum"
+        "QT_STYLE_OVERRIDE,kvantum"
         "QT_AUTO_SCREEN_SCALE_FACTOR,1"
+        "QT_QPA_PLATFORM,wayland;xcb"
+        "QT_WAYLAND_DISABLE_WINDOWDECORATION,1"
+
+        # Wayland-native toolkits for the common non-GTK/Qt clients.
+        "MOZ_ENABLE_WAYLAND,1"
+        "NIXOS_OZONE_WL,1"
+
+        # Let apps know what session they're in (some themes/portals
+        # key off this; rofi/waybar don't need it but Firefox + most
+        # xdg-desktop-portal implementations do).
+        "XDG_CURRENT_DESKTOP,Hyprland"
+        "XDG_SESSION_TYPE,wayland"
+        "XDG_SESSION_DESKTOP,Hyprland"
       ];
 
       # ── General ─────────────────────────────────────────────────────────
