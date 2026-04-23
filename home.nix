@@ -8,21 +8,19 @@
 { config, pkgs, lib, inputs ? {}, username ? "tim", ... }:
 
 let
-  dotnetSdks = builtins.concatLists [
-    (lib.optionals (pkgs ? dotnet-sdk_6) [ pkgs.dotnet-sdk_6 ])
-    (lib.optionals (pkgs ? dotnet-sdk_7) [ pkgs.dotnet-sdk_7 ])
-    (lib.optionals (pkgs ? dotnet-sdk_8) [ pkgs.dotnet-sdk_8 ])
-    (lib.optionals (pkgs ? dotnet-sdk_9) [ pkgs.dotnet-sdk_9 ])
-    (lib.optionals (pkgs ? dotnet-sdk_10) [ pkgs.dotnet-sdk_10 ])
-  ];
-  # One global dotnet binary in profile; full 6/7/8/9/10 remain in devShell.
-  globalDotnet =
-    if pkgs ? dotnet-sdk_10 then pkgs.dotnet-sdk_10
-    else if pkgs ? dotnet-sdk_9 then pkgs.dotnet-sdk_9
-    else if pkgs ? dotnet-sdk_8 then pkgs.dotnet-sdk_8
-    else if pkgs ? dotnet-sdk_7 then pkgs.dotnet-sdk_7
-    else if pkgs ? dotnet-sdk_6 then pkgs.dotnet-sdk_6
-    else null;
+  # Multi-SDK .NET via the nixpkgs-blessed combinator: 6, 8, 10 side-by-side
+  # on the same `dotnet` binary so `global.json` / `TargetFramework` routing
+  # works without a devShell. Each SDK is lib.optional-guarded so eval does
+  # not fail on channels that have not yet packaged one of them (.NET 10
+  # especially is recent on nixos-unstable).
+  dotnetCorePackages = pkgs.dotnetCorePackages;
+  dotnetSdkList =
+       (lib.optional (dotnetCorePackages ? sdk_6_0)  dotnetCorePackages.sdk_6_0)
+    ++ (lib.optional (dotnetCorePackages ? sdk_8_0)  dotnetCorePackages.sdk_8_0)
+    ++ (lib.optional (dotnetCorePackages ? sdk_10_0) dotnetCorePackages.sdk_10_0);
+  dotnetCombined =
+    if dotnetSdkList == [] then null
+    else dotnetCorePackages.combinePackages dotnetSdkList;
 in
 
 {
@@ -55,6 +53,7 @@ in
     ./home/shell/cli-tools.nix
     ./home/shell/dashboard.nix
     ./home/shell/github-sync.nix
+    ./home/shell/node.nix
 
     # Editor
     ./home/editor/neovim.nix
@@ -90,8 +89,8 @@ in
     discord
     opencode
 
-    # Dev runtimes / SDKs
-    nodejs_24
+    # Dev runtimes / SDKs (nodejs is installed via home/shell/node.nix
+    # alongside a user-writable npm global prefix).
     postgresql_18
     rustup
 
@@ -125,7 +124,7 @@ in
     cowsay
     hello
     wl-clipboard
-  ]) ++ (lib.optionals (globalDotnet != null) [ globalDotnet ]);
+  ]) ++ (lib.optional (dotnetCombined != null) dotnetCombined);
 
   # ── Session variables ───────────────────────────────────────────────────────
   home.sessionVariables = {
