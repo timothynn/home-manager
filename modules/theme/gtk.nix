@@ -5,7 +5,7 @@
 # Papirus-Dark icon theme.
 # JetBrains Mono as the default GTK font.
 ##############################################################################
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 let
   gtkThemeName    = "catppuccin-mocha-mauve-standard+default";
@@ -39,12 +39,13 @@ in
       size = 11;
     };
 
-    # GTK2: HM writes ~/.gtkrc-2.0 with these values (legacy apps like
-    # pavucontrol, transmission-gtk).
-    gtk2.configLocation = "\${XDG_CONFIG_HOME:-$HOME/.config}/gtk-2.0/gtkrc";
-    gtk2.extraConfig = ''
-      gtk-application-prefer-dark-theme = 1
-    '';
+    # GTK2: point HM at the XDG-compliant path instead of the default
+    # ~/.gtkrc-2.0, so everything theme-related lives under ~/.config.
+    # No extraConfig — the dark variant of catppuccin-gtk ships its
+    # own GTK2 gtkrc and HM already wires it via gtk-theme-name, and
+    # `gtk-application-prefer-dark-theme` is GTK3+ only (GTK2 ignores
+    # it silently, so it's noise to set here).
+    gtk2.configLocation = "${config.xdg.configHome}/gtk-2.0/gtkrc";
 
     gtk3.extraConfig = {
       gtk-application-prefer-dark-theme = 1;
