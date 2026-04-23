@@ -5,13 +5,25 @@
 # and Catppuccin syntax-highlighting colours via catppuccin-nix.
 # The prompt is handled by Starship (see home/shell/starship.nix).
 ##############################################################################
-{ pkgs, config, ... }:
+{ pkgs, config, lib, ... }:
 
 {
   # catppuccin-nix option path for zsh-syntax-highlighting is the top-level
   # `catppuccin.zsh-syntax-highlighting.enable` (guarded by
   # `programs.zsh.syntaxHighlighting.enable` below).
   catppuccin.zsh-syntax-highlighting.enable = true;
+
+  # Oh-My-Zsh's `docker` plugin tries to `cp` the docker CLI's completion
+  # into `$ZSH_CACHE_DIR/completions/` at first shell start. `$ZSH_CACHE_DIR`
+  # defaults to `$ZSH/cache`, which lives in the read-only Nix store under
+  # HM, so the plugin transparently falls back to `~/.cache/oh-my-zsh/`.
+  # If that directory doesn't exist (fresh machine / fresh user), `cp`
+  # fails with `Permission denied`. Pre-create it with user ownership so
+  # the plugin's first-run warm-up completes silently.
+  home.activation.ensureOmzCompletionsDir =
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      run mkdir -p "${config.home.homeDirectory}/.cache/oh-my-zsh/completions"
+    '';
 
   programs.zsh = {
     enable              = true;

@@ -113,6 +113,7 @@
     yt-dlp
 
     # Hyprland ecosystem extras
+    hyprpaper   # wallpaper daemon invoked by `exec-once = hyprpaper`
     hyprsunset
     hyprshot
     hyprspace
